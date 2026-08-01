@@ -1435,6 +1435,21 @@ drafts:
     slack: https://hackclub.enterprise.slack.com/archives/C0BF9UFNEDS
     slackChannel: "#braize"
     status: draft
+  - name: Survive
+    description: Make offline and outdoors themed projects, win outdoors gear!
+    website: https://survive-website.vercel.app/
+    logo: logos/heidi_survive.png
+    slack: https://hackclub.enterprise.slack.com/archives/C0B4BDVTN84
+    slackChannel: "#survive"
+    status: draft
+    detailedDescription: Make a themed project, ship it and earn wood to spend in the survive shop or buy a event ticket to an outdoors hackathon!
+    steps:
+      - Build an outdoor or survival themed project
+      - Track your time using Hackatime
+      - Ship it, and get it reviewed
+      - Earn wood to spend in the shop
+      - Spend that wood on prizes OR The hackathon tickets and travel stipends
+      - Come to the hackathon in New Zealand!
   - name: Pixl
     description: Explore the open world, meet characters, make hardware and software sidequests for them! Get niche prizes and stuff according to the sidequests!
     website: https://pixl.rsvp
@@ -1781,21 +1796,6 @@ drafts:
       - Form a clan with your friends
       - Go to war with your clan or alone
       - Buy something from the shop
-  - name: Survive
-    description: Make offline and outdoors themed projects, win outdoors gear!
-    website: https://survive-website.vercel.app/
-    logo: logos/heidi_survive.png
-    slack: https://hackclub.enterprise.slack.com/archives/C0B4BDVTN84
-    slackChannel: "#survive"
-    status: draft
-    detailedDescription: Make a themed project, ship it and earn wood to spend in the survive shop or buy a event ticket to an outdoors hackathon!
-    steps:
-      - Build an outdoor or survival themed project
-      - Track your time using Hackatime
-      - Ship it, and get it reviewed
-      - Earn wood to spend in the shop
-      - Spend that wood on prizes OR The hackathon tickets and travel stipends
-      - Come to the hackathon in New Zealand!
 
 
   
