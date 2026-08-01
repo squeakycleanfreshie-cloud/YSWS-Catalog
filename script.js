@@ -119,6 +119,7 @@ async function startRender() {
   await loadParticipants();
   updateParticipantCounts();
   loadTimelineBlocks();
+  handleDeepLink();
 }
 
 function loadParticipants() {
@@ -371,11 +372,6 @@ function setCountdownTimer(
   countDownId,
   isModal = false,
 ) {
-  let days = 0,
-    hours = 0,
-    minutes = 0,
-    seconds = 0,
-    isExpired = false;
   if (modalCountdownTimer) {
     clearCountdownTimer(countDownId);
   }
@@ -383,24 +379,14 @@ function setCountdownTimer(
   if (yswsStatus === "draft" || yswsStatus === "ended" || !deadlineStr) return;
 
   const end = new Date(deadlineStr);
-  const interval = setInterval(() => {
+  const render = () => {
     const now = new Date();
     const timeRemaining = end - now;
-    if (timeRemaining <= 0) {
-      days = 0;
-      hours = 0;
-      minutes = 0;
-      seconds = 0;
-      isExpired = true;
-    } else {
-      days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
-      hours = Math.floor(
-        (timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
-      );
-      minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-      seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
-      isExpired = false;
-    }
+    const isExpired = timeRemaining <= 0;
+    const days = isExpired ? 0 : Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+    const hours = isExpired ? 0 : Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = isExpired ? 0 : Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = isExpired ? 0 : Math.floor((timeRemaining % (1000 * 60)) / 1000);
 
     const counterHtml = `
     <div class="countdown-container">
@@ -429,7 +415,10 @@ function setCountdownTimer(
     }
 
     if (isExpired) clearInterval(interval);
-  }, 1000);
+  };
+
+  render();
+  const interval = setInterval(render, 1000);
 
   if (isModal) modalCountdownTimer = interval;
 }
@@ -692,9 +681,7 @@ function createProgramCard(program) {
     `
       : "";
 
-  const countDownId = `${program.name.toLowerCase().trim().replace(" ", "")}-countdown`;
-
-  setCountdownTimer(program.deadline, program.status, countDownId);
+  const countDownId = `${program.name.toLowerCase().trim().replace(/\s+/g, "")}-countdown`;
 
   const displayDescription =
     program.name === "Pixl"
@@ -970,6 +957,8 @@ function openModal(program) {
   modal.classList.add("active");
   body.classList.add("modal-open");
   playModalEntranceAnimation(modal);
+
+  history.replaceState(null, "", `#${nameToSlug(program.name)}`);
 }
 
 function closeModal() {
@@ -979,12 +968,34 @@ function closeModal() {
   modal.classList.remove("active");
   modal.classList.remove("is-animating");
   body.classList.remove("modal-open");
+
+  if (location.hash) {
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+  }
 }
 
 function findProgramByName(programName) {
   return Object.values(programs)
     .flat()
     .find((program) => program.name === programName);
+}
+
+function nameToSlug(name) {
+  return name.replace(/\s+/g, "-");
+}
+
+function handleDeepLink() {
+  const hash = location.hash.slice(1);
+  if (!hash) {
+    const modal = document.getElementById("program-modal");
+    if (modal?.classList.contains("active")) {
+      closeModal();
+    }
+    return;
+  }
+  const programName = hash.replace(/-/g, " ");
+  const program = findProgramByName(programName);
+  if (program) openModal(program);
 }
 
 function getLeaderboardProgram(programName, shipCount) {
@@ -1259,6 +1270,14 @@ function refreshCollapsibleSections() {
   });
 }
 
+function startCardCountdowns() {
+  document.querySelectorAll(".program-card").forEach((card) => {
+    const program = JSON.parse(decodeURIComponent(card.dataset.program));
+    const countDownId = `${program.name.toLowerCase().trim().replace(/\s+/g, "")}-countdown`;
+    setCountdownTimer(program.deadline, program.status, countDownId);
+  });
+}
+
 function renderPrograms() {
   const container = document.getElementById("programs-container");
   const expandedCategories = new Set(
@@ -1334,6 +1353,7 @@ function renderPrograms() {
   }
 
   refreshCollapsibleSections();
+  startCardCountdowns();
 }
 
 function updateSort(sortType) {
@@ -1856,6 +1876,8 @@ document.addEventListener("DOMContentLoaded", () => {
     .getElementById("theme-toggle")
     .addEventListener("click", toggleTheme);
 
+  window.addEventListener("hashchange", handleDeepLink);
+
   setInterval(updateDeadlines, 60000);
 
   document.querySelectorAll(".sort-btn").forEach((button) => {
@@ -1900,6 +1922,26 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       openModal(program);
+      return;
+    }
+
+    if (e.target.closest("#modal-share")) {
+      try {
+        const programName = document.getElementById("modal-title").textContent;
+        const url = `${window.location.origin}${window.location.pathname}#${nameToSlug(programName)}`;
+        if (navigator.share) {
+          navigator.share({ title: programName, url });
+        } else {
+          navigator.clipboard?.writeText(url);
+          const btn = document.getElementById("modal-share");
+          const original = btn.innerHTML;
+          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+          setTimeout(() => (btn.innerHTML = original), 2000);
+        }
+      } catch (e) {
+        console.error("Share failed:", e);
+      }
+      return;
     }
 
     if (
